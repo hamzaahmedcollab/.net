@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6a5acd, #00bcd4, #ff4081);
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: auto;
+            text-align: center;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+        }
+
+        h1 {
+            font-size: 3em;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+        }
+
+        #score, #timer {
+            font-size: 1.5em;
+            margin-top: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #ff4081, #6a5acd);
+            border: none;
+            color: white;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 200px;
+            margin: 15px;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .option {
+            width: 90%;
+            margin: 10px auto;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: #fff;
+            font-size: 1.2em;
+            text-align: center;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .option:hover {
+            transform: scale(1.05);
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        #next-button:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #final-score {
+            margin-top: 40px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        #answer-key-button {
+            background: linear-gradient(45deg, #ff9800, #ff4081);
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        #answer-key-button:hover {
+            transform: scale(1.1);
+            background: linear-gradient(45deg, #ff4081, #ff9800);
+        }
+
+        #answer-key {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            text-align: left;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vocabulary Game</h1>
+        <p id="score">Score: 0</p>
+        <p id="timer">Time Remaining: 30s</p>
+        <div id="word-container">
+            <h2 id="word">Loading...</h2>
+        </div>
+        <div id="options">
+            <button class="option" onclick="checkAnswer(this)"></button>
+            <button class="option" onclick="checkAnswer(this)"></button>
+            <button class="option" onclick="checkAnswer(this)"></button>
+            <button class="option" onclick="checkAnswer(this)"></button>
+        </div>
+        <button id="next-button" onclick="nextWord()" class="next-button" disabled>Next Word</button>
+        <div id="final-score" style="display: none;">
+            <h2>Game Over</h2>
+            <p>Your final score is: <span id="final-score-value">0</span></p>
+            <button onclick="restartGame()">Restart</button>
+            <button id="answer-key-button" style="display: none;" onclick="showAnswerKey()">Show Answer Key</button>
+            <div id="answer-key" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+const words = [
+    { word: "blithe", definition: "Cheerful and carefree", options: ["Carefree and lively", "Easily irritated", "In a good mood", "Cheerful and carefree"] },
+    { word: "cheerful", definition: "Full of happiness and joy", options: ["Easily annoyed", "Carefree", "Full of happiness and joy", "Angry"] },
+    { word: "exuberant", definition: "Full of energy and excitement", options: ["Calm and collected", "Lively and full of energy", "Sad and depressed", "Full of energy and excitement"] },
+    { word: "gleeful", definition: "Showing great joy and delight", options: ["Sad and sorrowful", "Displaying happiness", "Mad and angry", "Showing great joy and delight"] },
+    { word: "elated", definition: "Very happy and excited", options: ["Bored", "Full of energy", "Overjoyed", "Very happy and excited"] },
+    { word: "carefree", definition: "Without any worries or stress", options: ["Worried", "Stress-free", "Lacking enthusiasm", "Without any worries or stress"] },
+    { word: "prickly", definition: "Easily irritated", options: ["Friendly", "Easily annoyed", "Full of energy", "Easily irritated"] },
+    { word: "churlish", definition: "Rude and bad-tempered", options: ["Polite", "Rude and ill-tempered", "Carefree", "Rude and bad-tempered"] },
+    { word: "crotchety", definition: "Easily irritated and in a bad mood", options: ["Gentle", "Calm", "Easily annoyed", "Easily irritated and in a bad mood"] },
+    { word: "cantankerous", definition: "Bad-tempered and argumentative", options: ["Friendly", "Grumpy and ill-natured", "Polite", "Bad-tempered and argumentative"] },
+    { word: "waspish", definition: "Irritable and easily angered", options: ["Energetic", "Angry", "Irritable and easily angered", "Sensitive"] },
+    { word: "radiant", definition: "Sending out light, shining brightly", options: ["Dull", "Shining and glowing", "Full of sadness", "Sending out light, shining brightly"] },
+    { word: "grouchy", definition: "Irritable and complaining", options: ["Happy", "Energetic", "Grumpy", "Irritable and complaining"] }
+];
+
+let currentWordIndex = 0;
+let score = 0;
+let timer = 30;
+let timerInterval;
+
+function loadWord() {
+    if (currentWordIndex >= words.length || timer <= 0) {
+        endGame();
+        return;
+    }
+
+    const wordObj = words[currentWordIndex];
+    const wordElement = document.getElementById('word');
+    const options = document.querySelectorAll('.option');
+    wordElement.textContent = wordObj.word;
+
+    // Combine correct definition with distractors and shuffle them
+    const allOptions = [...wordObj.options];
+    allOptions.sort(() => Math.random() - 0.5);
+
+    // Populate options and mark only the correct one
+    options.forEach((option, index) => {
+        option.textContent = allOptions[index];
+        if (allOptions[index] === wordObj.definition) {
+            option.dataset.correct = "true";
+        } else {
+            option.dataset.correct = "false";
+        }
+    });
+
+    document.getElementById('next-button').disabled = true; // Disable the "Next" button initially
+}
+
+function checkAnswer(button) {
+    const isCorrect = button.dataset.correct === "true";
+    const scoreElement = document.getElementById('score');
+
+    if (isCorrect) {
+        score++;
+        scoreElement.textContent = `Score: ${score}`;
+        document.querySelectorAll('.option').forEach(option => (option.disabled = true)); // Disable options after answer
+        document.getElementById('next-button').disabled = false; // Enable the "Next" button
+    } else {
+        // Provide feedback for a wrong answer
+        button.style.backgroundColor = '#ff6666'; // Highlight wrong answer
+        setTimeout(() => {
+            button.style.backgroundColor = ''; // Reset the button color
+        }, 500);
+    }
+}
+
+function nextWord() {
+    currentWordIndex++; // Advance to the next word
+    loadWord();
+
+    // Reset option states for the next word
+    document.querySelectorAll('.option').forEach(option => (option.disabled = false));
+    document.getElementById('next-button').disabled = true; // Disable the "Next" button again
+}
+
+function startTimer() {
+    timerInterval = setInterval(() => {
+        timer--;
+        document.getElementById('timer').textContent = `Time Remaining: ${timer}s`;
+
+        if (timer <= 0) {
+            clearInterval(timerInterval);
+            endGame();
+           
+        }
+    }, 1000);
+}
+
+function endGame() {
+    document.getElementById('score').style.display = 'none';
+    document.getElementById('timer').style.display = 'none';
+    document.getElementById('next-button').disabled = true;
+    document.getElementById('final-score').style.display = 'block';
+    document.getElementById('final-score-value').textContent = score;
+
+    // Show the answer key button
+    const answerKeyButton = document.getElementById('answer-key-button');
+    answerKeyButton.style.display = 'block';
+    answerKeyButton.addEventListener('click', showAnswerKey);
+}
+
+function showAnswerKey() {
+    const answerKeyElement = document.getElementById('answer-key');
+    answerKeyElement.style.display = 'block';
+    const answerList = words.map(word => `<li><strong>${word.word}:</strong> ${word.definition}</li>`).join('');
+    answerKeyElement.innerHTML = `<ul>${answerList}</ul>`;
+}
+
+function restartGame() {
+    score = 0;
+    timer = 30;
+    currentWordIndex = 0;
+    document.getElementById('score').textContent = `Score: ${score}`;
+    document.getElementById('score').style.display = 'block';
+    document.getElementById('timer').style.display = 'block';
+    document.getElementById('final-score').style.display = 'none';
+    document.getElementById('answer-key-button').style.display = 'none';
+    document.getElementById('answer-key').style.display = 'none';
+    clearInterval(timerInterval); // Clear any existing timer
+    startTimer();
+    loadWord();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    startTimer();
+    loadWord();
+});
+
+    </script>
+</body>
+</html>
